@@ -1,0 +1,88 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+
+{% block body %}
+    <div class="container">
+        <h2 class="text-secondary">All Posts</h2>
+        <hr/>
+        {% if request.user.is_authenticated %}
+            <div id="user_id" style="visibility: hidden;">{{request.user.id}}</div>
+        {% endif %}
+        {% for post, like_count, like_flag in data %}
+            <div class="row">
+                <div class="col">
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between">
+                            <div>
+                                <a href="#" class="font-weight-bold">{{ post.poster.username }}</a>
+                            </div>
+                            <div class="font-italic text-muted">
+                                {{ post.posted_at }}
+                            </div>
+                        </div>
+                        <div class="card-body">                            
+                            <p id="post_content_{{post.id}}">
+                                {{ post.text }}
+                            </p>
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <div>
+                                {% if request.user.is_authenticated %}
+                                    {% if like_flag == True %}
+                                        <a class="btn like_unlike_button" id="{{post.id}}">❤️</a>
+                                    {% else %}
+                                        <a class="btn like_unlike_button" id="{{post.id}}">🤍</a>
+                                    {% endif %}
+                                {% endif %}
+                                <span id="total_likes_{{post.id}}">{{ like_count  }}</span>
+                                {% if like_count > 1 %}
+                                    <span>likes</span>
+                                {% else %}
+                                    <span>like</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if request.user.is_authenticated and request.user == post.poster %}
+                                    <button class="btn btn-danger edit-button" id="_{{post.id}}">Edit</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- modals -->
+        <div class="modal" tabindex="-1" role="dialog" id="post-edit-modal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Post</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form method="POST" id="post-edit-form">
+                        {% csrf_token %}
+                        <input type="hidden" id="original-post-id">
+                        <div class="modal-body">                            
+                            <div class="form-group">
+                                <label for="text">What's on your mind</label>
+                                <textarea name="text" class="form-control" id="post-edit-textbox" cols="30" rows="5"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-secondary">Save</button>
+                        </div>
+                    </form>                    
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block script %}
+    <script src="{% static 'network/index.js' %}"></script>
+{% endblock %}
