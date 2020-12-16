@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 
 from .models import User, Post
 
@@ -23,12 +24,20 @@ def get_like_count_and_like_flag(request, posts):
 def index(request):
     posts = Post.objects.order_by("-posted_at").all()
     like_count, like_flag = get_like_count_and_like_flag(request, posts)
-
+    """
     return render(request, "network/index.html", {
         "data": zip(posts , like_count, like_flag),
         "page_heading": "All Posts"
     })
-
+    """
+    data = list(zip(posts , like_count, like_flag))
+    paginator = Paginator(data, 10) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'network/index.html', {
+        'page_obj': page_obj,
+        "page_heading": "All Posts"
+    })
 
 
 def user(request, user_id):
@@ -38,7 +47,7 @@ def user(request, user_id):
         return JsonResponse({"error": "User not found."}, status=404)     
     posts = Post.objects.filter(poster=user).order_by("-posted_at").all()
     like_count, like_flag = get_like_count_and_like_flag(request, posts)
-        
+    """  
     return render(request, "network/index.html", {
         "data": zip(posts , like_count, like_flag),
         "member" : user,
@@ -47,7 +56,20 @@ def user(request, user_id):
         "followers" : [follower.username for follower in user.follower.all()],
         "page_heading" : f"All posts from {user.username}"
     })
-    
+    """
+    data = list(zip(posts , like_count, like_flag))
+    paginator = Paginator(data, 10) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, "network/index.html", {
+        'page_obj': page_obj,
+        "member" : user,
+        "follower_count" : user.follower.all().count(),
+        "following_count" : user.following.all().count(),
+        "followers" : [follower.username for follower in user.follower.all()],
+        "page_heading" : f"All posts from {user.username}"
+    })
+
 
 
 @csrf_exempt
@@ -83,9 +105,18 @@ def following(request, user_id):
         return JsonResponse({"error": "User not found."}, status=404)
     posts = Post.objects.filter(poster__in = user.following.all()).order_by("-posted_at").all()
     like_count, like_flag = get_like_count_and_like_flag(request, posts)
-        
+    """  
     return render(request, "network/index.html", {
         "data": zip(posts , like_count, like_flag),
+        "page_heading": f"Posts from people followed by {user.username}"
+    })
+    """
+    data = list(zip(posts , like_count, like_flag))
+    paginator = Paginator(data, 10) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, "network/index.html", {
+        'page_obj': page_obj,
         "page_heading": f"Posts from people followed by {user.username}"
     })
 
