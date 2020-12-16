@@ -11,17 +11,85 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User, Post
 
 
-def index(request):
-    posts = Post.objects.order_by("-posted_at").all()
+def get_like_count_and_like_flag(request, posts):
     like_count = [len(post.liked_by.all()) for post in posts]
     if request.user.is_authenticated:
         like_flag = [request.user in post.liked_by.all() for post in posts]
     else:
-        like_flag = [''] * len(posts) 
+        like_flag = [''] * len(posts)
+    return like_count, like_flag
+
+
+def index(request):
+    posts = Post.objects.order_by("-posted_at").all()
+    like_count, like_flag = get_like_count_and_like_flag(request, posts)
 
     return render(request, "network/index.html", {
-        "data": zip(posts , like_count, like_flag)
+        "data": zip(posts , like_count, like_flag),
+        "page_heading": "All Posts"
     })
+
+
+
+def user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except:
+        return JsonResponse({"error": "User not found."}, status=404)     
+    posts = Post.objects.filter(poster=user).order_by("-posted_at").all()
+    like_count, like_flag = get_like_count_and_like_flag(request, posts)
+        
+    return render(request, "network/index.html", {
+        "data": zip(posts , like_count, like_flag),
+        "member" : user,
+        "follower_count" : user.follower.all().count(),
+        "following_count" : user.following.all().count(),
+        "followers" : [follower.username for follower in user.follower.all()],
+        "page_heading" : f"All posts from {user.username}"
+    })
+    
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def add_remove_follower(request, user_id):    
+    if request.method == "PUT":
+        try:
+            user = User.objects.get(pk=user_id)
+        except:
+            return JsonResponse({"error": "User not found."}, status=404)
+        data = json.loads(request.body)
+        follower_id = int(data.get("follower_id"))
+        try:
+            follower = User.objects.get(pk=follower_id)
+        except:
+            return JsonResponse({"error": "User not found."}, status=404)
+        if follower not in user.follower.all():
+            user.follower.add(follower)
+        else:
+            user.follower.remove(follower)
+        return HttpResponse(status=204)
+    else:
+        return JsonResponse({
+            "error": " PUT request required."
+        }, status=400)
+
+
+@login_required(login_url='login')
+def following(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except:
+        return JsonResponse({"error": "User not found."}, status=404)
+    posts = Post.objects.filter(poster__in = user.following.all()).order_by("-posted_at").all()
+    like_count, like_flag = get_like_count_and_like_flag(request, posts)
+        
+    return render(request, "network/index.html", {
+        "data": zip(posts , like_count, like_flag),
+        "page_heading": f"Posts from people followed by {user.username}"
+    })
+
+
 
 
 def login_view(request):
@@ -88,7 +156,7 @@ def create(request):
 
 
 @csrf_exempt
-@login_required
+@login_required(login_url='login')
 def post(request, post_id):
     if request.method == "PUT":
         try:
@@ -117,3 +185,5 @@ def post(request, post_id):
         return JsonResponse({
             "error": " PUT request required."
         }, status=400)
+
+

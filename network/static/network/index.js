@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
   
   document.querySelectorAll('.like_unlike_button').forEach(item => {
+    
+
     item.addEventListener('click', (event)=>{
       let post_id = parseInt(event.target.id);
       let user_id = parseInt(document.querySelector('#user_id').innerHTML);
@@ -36,30 +38,59 @@ document.addEventListener('DOMContentLoaded', function() {
       //console.log(`trying to edit post ${post_id}`);
       let current_text = document.querySelector(`#post_content_${post_id}`).innerHTML.trim();
       //console.log(current_text);
-      document.querySelector('#post-edit-textbox').value = current_text;
-      document.querySelector('#original-post-id').value = post_id;
-      $('#post-edit-modal').modal();
+      document.querySelector(`#show_post_${post_id}`).style.display = 'none';
+      document.querySelector(`#edit_post_${post_id}`).style.display = 'block';
+      document.querySelector(`#edit_post_content_${post_id}`).value = current_text;      
     })
   });
 
-  document.querySelector('#post-edit-form').onsubmit = (event)=>{
-    
-    let post_id = document.querySelector('#original-post-id').value;
-    let new_content = document.querySelector('#post-edit-textbox').value.trim();    
-    console.log(`replacing ${post_id} with ${new_content}`);
-    document.querySelector(`#post_content_${post_id}`).innerHTML = new_content;
-    
-    fetch(`/posts/${post_id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-          new_content: new_content
-      })
-    })
-    .then(()=>console.log('success'))
-    .catch(() => console.log('failed'));
   
+  document.querySelectorAll('.save_edit_button').forEach(item => {
+    item.addEventListener('click', (event)=>{
+      let post_id = event.target.id.slice(2);      
+      let new_content = document.querySelector(`#edit_post_content_${post_id}`).value.trim();
 
-    $('#post-edit-modal').modal('hide');
-    event.preventDefault();
+      fetch(`/posts/${post_id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            new_content: new_content
+        })
+      })
+      
+
+      document.querySelector(`#show_post_${post_id}`).style.display = 'block';
+      document.querySelector(`#edit_post_${post_id}`).style.display = 'none';
+      document.querySelector(`#post_content_${post_id}`).innerHTML = new_content;
+      
+    })
+  });
+
+  if(document.querySelector('#follow-unfollow-button') !== null){
+    document.querySelector('#follow-unfollow-button').addEventListener('click', (event)=>{
+      let member_id = parseInt(document.querySelector('#member_id').innerHTML);
+      let user_id = parseInt(document.querySelector('#user_id').innerHTML);
+      //console.log(`${user_id} wants to follow ${member_id}`);
+      let x = parseInt(document.querySelector('#follower_count').innerHTML);
+      if(event.target.innerHTML == "Follow"){
+        event.target.innerHTML = "Unfollow";
+        event.target.className = "btn btn-warning";
+        document.querySelector('#follower_count').innerHTML = x + 1;
+      }
+      else{
+        event.target.innerHTML = "Follow";
+        event.target.className = "btn btn-success";
+        document.querySelector('#follower_count').innerHTML = x - 1;
+      }     
+      
+      fetch(`/add_remove_follower/${member_id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            follower_id: user_id
+        })
+      })
+      
+
+    });
   }
+  
 });
