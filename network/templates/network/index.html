@@ -54,10 +54,10 @@
                                         {% endif %}
                                     {% endif %}
                                     <span id="total_likes_{{post.id}}">{{ like_count  }}</span>
-                                    {% if like_count > 1 %}
-                                        <span>likes</span>
+                                    {% if like_count == 1 %}
+                                        <span id="like_text_{{post.id}}">like</span>
                                     {% else %}
-                                        <span>like</span>
+                                        <span id="like_text_{{post.id}}">likes</span>
                                     {% endif %}
                                 </div>
                                 <div>

@@ -8,18 +8,27 @@ document.addEventListener('DOMContentLoaded', function() {
       let post_id = parseInt(event.target.id);
       let user_id = parseInt(document.querySelector('#user_id').innerHTML);
       let count_element = document.querySelector(`#total_likes_${post_id}`);
+      let like_text_element = document.querySelector(`#like_text_${post_id}`)
       let count_value = parseInt(count_element.innerHTML);
       
       //console.log(count);
       //console.log(event.target.id);
       if(event.target.innerHTML === '❤️'){
         event.target.innerHTML = '🤍';
-        count_element.innerHTML = count_value - 1;
+        count_element.innerHTML = count_value - 1;        
       }
       else{
         event.target.innerHTML = '❤️';
         count_element.innerHTML = count_value + 1;
       }
+
+      if(parseInt(count_element.innerHTML) === 1){
+        like_text_element.innerHTML = 'like'
+      }
+      else{
+        like_text_element.innerHTML = 'likes';
+      }
+
       fetch(`/posts/${post_id}`, {
         method: 'PUT',
         body: JSON.stringify({
